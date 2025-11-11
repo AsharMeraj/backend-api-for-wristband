@@ -24,6 +24,11 @@ app.post("/api/vitals", async (req, res) => {
   }
 });
 
+app.get("/api/vitals", (req, res) => {
+  res.json({ message: "Use POST to send vitals data" });
+});
+
+
 // Start Express server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
