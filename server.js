@@ -1,7 +1,7 @@
-import fs from "fs";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import fs from "fs";
 
 dotenv.config();
 
@@ -9,21 +9,37 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// POST /api/vitals equivalent to Next.js POST handler
+// Temporary storage for incoming vitals
+let vitalsData = [];
 
+// POST /api/vitals
 app.post("/api/vitals", async (req, res) => {
-  const vitals = req.body;
-  fs.appendFileSync("vitals.log", JSON.stringify(vitals) + "\n");
-  console.log("Vitals received:", vitals);
-  res.status(200).json({ message: "Vitals received successfully" });
+  try {
+    const vitals = req.body;
+    console.log("Vitals received:", vitals);
+
+    // Store in memory
+    vitalsData.push(vitals);
+
+    // Optional: Save to file for persistence
+    fs.appendFileSync("vitals.log", JSON.stringify(vitals) + "\n");
+
+    res.status(200).json({ message: "Vitals received successfully" });
+  } catch (err) {
+    console.error("Error processing vitals:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
-
-
+// GET /api/vitals — return all received vitals
 app.get("/api/vitals", (req, res) => {
-  res.json({ message: "Use POST to send vitals data" });
+  try {
+    res.status(200).json(vitalsData);
+  } catch (err) {
+    console.error("Error fetching vitals:", err);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
-
 
 // Start Express server
 const PORT = process.env.PORT || 5000;
