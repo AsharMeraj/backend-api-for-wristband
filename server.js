@@ -1,3 +1,4 @@
+import fs from "fs";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -9,16 +10,14 @@ app.use(cors());
 app.use(express.json());
 
 // POST /api/vitals equivalent to Next.js POST handler
+
 app.post("/api/vitals", async (req, res) => {
-  try {
-    const vitals = req.body;
-    console.log("Vitals received:", vitals); // <-- This prints JSON to console
-    res.status(200).json({ message: "Vitals received successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
+  const vitals = req.body;
+  fs.appendFileSync("vitals.log", JSON.stringify(vitals) + "\n");
+  console.log("Vitals received:", vitals);
+  res.status(200).json({ message: "Vitals received successfully" });
 });
+
 
 
 app.get("/api/vitals", (req, res) => {
