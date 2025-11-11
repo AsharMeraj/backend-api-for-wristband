@@ -11,18 +11,15 @@ app.use(express.json());
 // POST /api/vitals equivalent to Next.js POST handler
 app.post("/api/vitals", async (req, res) => {
   try {
-    const vitals = req.body; // JSON payload from Android
-    console.log("Vitals received:", vitals);
-
-    // You can save vitals to DB here if needed
-    // await db.insert(vital_data).values(vitals);
-
+    const vitals = req.body;
+    console.log("Vitals received:", vitals); // <-- This prints JSON to console
     res.status(200).json({ message: "Vitals received successfully" });
   } catch (err) {
-    console.error("Error processing vitals:", err);
+    console.error(err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
 
 app.get("/api/vitals", (req, res) => {
   res.json({ message: "Use POST to send vitals data" });
