@@ -1,6 +1,7 @@
+import 'dotenv/config';
 import express from "express";
 import cors from "cors";
-import vitalsRouter from "./api/vitals";
+import vitalsRouter from "./api/vitals.js";
 
 const app = express();
 app.use(cors());
