@@ -24,8 +24,6 @@ const db = drizzle(sql);
 app.post("/api/vitals", async (req, res) => {
   try {
     const packets = req.body;
-    if (!Array.isArray(packets)) return res.status(400).json({ error: "Expected array" });
-
     const validPackets = packets.filter(p => p.spo2 && p.spo2 !== "0");
     if (validPackets.length === 0) return res.status(200).json({ message: "No valid SPO2 data" });
 
