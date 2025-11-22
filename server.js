@@ -1,11 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import fs from "fs";
-import { db } from "./index.js";  
-import { vital_data_from_wristband } from "./schema";
-
-
+import { db } from "./index.js";
+import { vital_data_from_wristband } from "./schema.js";
 
 dotenv.config();
 
@@ -13,32 +10,29 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
-// Temporary storage for incoming vitals
-let vitalsData = [];
-
 // POST /api/vitals
 app.post("/api/vitals", async (req, res) => {
   try {
     const packets = req.body;
 
     if (!Array.isArray(packets)) {
-      throw new Error("Expected an array of vitals packets");
+      return res.status(400).json({ error: "Expected an array of vitals packets" });
     }
 
-    // Filter ONLY packets where spo2 != "0"
-    const validPackets = packets.filter(p => p.spo2 && p.spo2 !== "0");
+    // Only insert packets with valid SPO2
+    const validPackets = packets.filter(
+      p => p.spo2 && p.spo2 !== "0"
+    );
 
     if (validPackets.length === 0) {
       return res.status(200).json({ message: "No valid spo2 data found" });
     }
 
-    // Insert all valid packets into DB
     await db.insert(vital_data_from_wristband).values(validPackets);
 
     res.status(200).json({
       message: "Valid spo2 packets saved",
-      savedCount: validPackets.length
+      savedCount: validPackets.length,
     });
 
   } catch (err) {
@@ -47,8 +41,7 @@ app.post("/api/vitals", async (req, res) => {
   }
 });
 
-
-// GET /api/vitals — return all received vitals
+// GET /api/vitals
 app.get("/api/vitals", async (req, res) => {
   try {
     const wristbandData = await db.select().from(vital_data_from_wristband);
@@ -61,7 +54,6 @@ app.get("/api/vitals", async (req, res) => {
   }
 });
 
-// Start Express server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
