@@ -2,7 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import fs from "fs";
-import { db } from "./index.ts";  
+import { db } from "./index.js";  
+import { vital_data_from_wristband } from "./schema";
+
 
 
 dotenv.config();
@@ -47,9 +49,12 @@ app.post("/api/vitals", async (req, res) => {
 
 
 // GET /api/vitals — return all received vitals
-app.get("/api/vitals", (req, res) => {
+app.get("/api/vitals", async (req, res) => {
   try {
-    res.status(200).json(vitalsData);
+    const wristbandData = await db.select().from(vital_data_from_wristband);
+
+    res.status(200).json(wristbandData);
+
   } catch (err) {
     console.error("Error fetching vitals:", err);
     res.status(500).json({ error: "Internal Server Error" });
