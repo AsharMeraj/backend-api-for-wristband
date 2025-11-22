@@ -1,9 +1,12 @@
 {
   "version": 2,
   "builds": [
-    { "src": "api/*.js", "use": "@vercel/node" }
+    { "src": "api/vitals.js", "use": "@vercel/node" }
   ],
   "routes": [
-    { "src": "/vitals", "dest": "/api/vitals.js" }
+    {
+      "src": "/.*",
+      "dest": "/api/vitals.js"
+    }
   ]
 }
