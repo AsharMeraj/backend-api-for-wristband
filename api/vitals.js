@@ -1,12 +1,12 @@
 import { drizzle } from "drizzle-orm/neon-http";
 import { neon } from "@neondatabase/serverless";
-import { vital_data_from_wristband } from "../schema.js";
+import { vital_data_from_wristband } from "../schema.ts";
 
 if (!process.env.DATABASE_URL) {
   throw new Error("DATABASE_URL is not set. Add it to Vercel Environment Variables!");
 }
 
-const sql = neon(process.env.DATABASE_URL);
+const sql = neon("postgresql://neondb_owner:npg_jNC6J0lROeLv@ep-wild-firefly-a12vf5uv-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require");
 const db = drizzle(sql);
 
 export default async function handler(req, res) {
