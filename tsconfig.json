@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
-    "allowJs": true,
-    "target": "ES2020",
+    "target": "ES2022",
     "module": "ESNext",
     "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "strict": true,
     "outDir": "dist",
-    "resolveJsonModule": true,
-    "skipLibCheck": true
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
   },
-  "include": ["api/**/*", "schema.*", "index.*"]
+  "include": ["api/**/*.ts", "db/**/*.ts", "index.js", "drizzle.config.ts"]
 }
