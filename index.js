@@ -24,16 +24,37 @@ const db = drizzle(sql);
 app.post("/api/vitals", async (req, res) => {
   try {
     const packets = req.body;
-    const validPackets = packets.filter(p => p.spo2 && p.spo2 !== "0");
-    if (validPackets.length === 0) return res.status(200).json({ message: "No valid SPO2 data" });
 
-    await db.insert(vital_data_from_wristband).values(validPackets);
-    res.status(200).json({ message: "Saved", savedCount: validPackets.length });
+    // Accept both single object and array of packets
+    const packetArray = Array.isArray(packets) ? packets : [packets];
+
+    // Filter packets with valid spo2 (non-zero)
+    const validPackets = packetArray.filter(p => p.spo2 && p.spo2 !== "0");
+
+    // Always insert all received packets (even if spo2 is 0)
+    await db.insert(vital_data_from_wristband).values(packetArray);
+
+    if (validPackets.length > 0) {
+      // Stop condition reached
+      return res.status(200).json({
+        message: "Saved and received valid SPO2",
+        savedCount: packetArray.length,
+        validSpo2Count: validPackets.length
+      });
+    }
+
+    // No valid spo2 yet, keep accepting
+    res.status(200).json({
+      message: "Saved, waiting for valid SPO2",
+      savedCount: packetArray.length
+    });
+
   } catch (err) {
     console.error("Error saving vitals:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // GET /api/vitals
 app.get("/api/vitals", async (req, res) => {
