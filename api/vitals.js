@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     if (!process.env.DATABASE_URL)
       return res.status(500).json({ error: "DATABASE_URL not set" });
 
-    const sql = neon(process.env.DATABASE_URL);
+    const sql = neon(process.env.DATABASE_URL || "");
     const db = drizzle(sql);
 
     if (req.method === "POST") {
