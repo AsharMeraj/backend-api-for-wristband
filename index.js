@@ -31,22 +31,19 @@ app.post("/api/vitals", async (req, res) => {
     // Filter packets with valid spo2 (non-zero)
     const validPackets = packetArray.filter(p => p.spo2 && p.spo2 !== "0");
 
-    // Always insert all received packets (even if spo2 is 0)
-    await db.insert(vital_data_from_wristband).values(packetArray);
-
-    if (validPackets.length > 0) {
-      // Stop condition reached
+    if (validPackets.length === 0) {
+      // No valid SPO2 data to save
       return res.status(200).json({
-        message: "Saved and received valid SPO2",
-        savedCount: packetArray.length,
-        validSpo2Count: validPackets.length
+        message: "No valid SPO2 data to save",
       });
     }
 
-    // No valid spo2 yet, keep accepting
+    // Insert only packets with valid SPO2
+    await db.insert(vital_data_from_wristband).values(validPackets);
+
     res.status(200).json({
-      message: "Saved, waiting for valid SPO2",
-      savedCount: packetArray.length
+      message: "Saved valid SPO2 packets",
+      savedCount: validPackets.length,
     });
 
   } catch (err) {
@@ -54,6 +51,7 @@ app.post("/api/vitals", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 // GET /api/vitals
