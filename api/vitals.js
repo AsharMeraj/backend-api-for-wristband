@@ -13,7 +13,7 @@ const db = drizzle(sql);
 
 const router = Router();
 
-router.post("/", async (req, res) => {
+router.post("/api/vitals", async (req, res) => {
   try {
     const packets = req.body;
     if (!Array.isArray(packets))
@@ -31,7 +31,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/api/vitals", async (req, res) => {
   try {
     const data = await db.select().from(vital_data_from_wristband);
     res.status(200).json(data);
