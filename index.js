@@ -4,4 +4,4 @@ import { pgTable, varchar } from "drizzle-orm/pg-core";
 
 // Initialize Neon client inside the function
 const sql = neon(process.env.DATABASE_URL);
-const db = drizzle(sql);
+export const db = drizzle(sql);
