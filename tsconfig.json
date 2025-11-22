@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "strict": true,
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+  },
+  "include": ["api/**/*", "schema.*", "index.*"]
+}
