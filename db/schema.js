@@ -37,6 +37,7 @@ export const demographic_data = pgTable("demographic_data", {
 
 
 export const vital_data_from_wristband = pgTable("vital_data_from_wristband", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
   timestamp: varchar("timestamp", { length: 100 }),   // timestamp stored as string
   temperature: varchar("temperature", { length: 100 }),
   heartRate: varchar("heartRate", { length: 100 }),
