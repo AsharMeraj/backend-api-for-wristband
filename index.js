@@ -23,34 +23,35 @@ const db = drizzle(sql);
 // POST /api/vitals
 app.post("/api/vitals", async (req, res) => {
   try {
-    const packets = req.body;
-
-    // Accept both single object and array of packets
-    const packetArray = Array.isArray(packets) ? packets : [packets];
-
-    // Filter packets with valid spo2 (non-zero)
-    const validPackets = packetArray.filter(p => p.spo2 && p.spo2 !== "0");
-
-    if (validPackets.length === 0) {
-      // No valid SPO2 data to save
-      return res.status(200).json({
-        message: "No valid SPO2 data to save",
-      });
+      const packets = req.body;
+      if (!Array.isArray(packets))
+        return res.status(400).json({ error: "Expected array" });
+  
+      // Transform packets: make spo2 = 0 an empty string
+      const transformedPackets = packets.map(p => ({
+        ...p,
+        spo2: p.spo2 === "0" || p.spo2 === 0 ? "" : p.spo2,
+      }));
+  
+      // Keep only the last packet (latest)
+      const latestPacket = transformedPackets[transformedPackets.length - 1];
+  
+      if (!latestPacket) {
+        return res.status(200).json({ message: "No data to save" });
+      }
+  
+      // Delete previous row(s)
+      await db.delete(vital_data_from_wristband);
+  
+      // Insert latest packet
+      await db.insert(vital_data_from_wristband).values(latestPacket);
+  
+      res.status(200).json({ message: "Saved latest packet", savedData: latestPacket });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.message });
     }
-
-    // Insert only packets with valid SPO2
-    await db.insert(vital_data_from_wristband).values(validPackets);
-
-    res.status(200).json({
-      message: "Saved valid SPO2 packets",
-      savedCount: validPackets.length,
-    });
-
-  } catch (err) {
-    console.error("Error saving vitals:", err);
-    res.status(500).json({ error: err.message });
-  }
-});
+  });
 
 
 
