@@ -52,59 +52,55 @@ const db = drizzle(sql);
 //   }
 // });
 
+// ... existing imports ...
+
+// 1. Initialize In-Memory Storage
+// This will hold the data while the server is running
+let vitalsCache = []; 
+
+// POST /api/vitals
 app.post("/api/vitals", async (req, res) => {
   try {
     const packets = req.body;
-
-    // 1. Accept both single object and array of packets
     const packetArray = Array.isArray(packets) ? packets : [packets];
 
     if (packetArray.length === 0) {
       return res.status(200).json({ message: "No data to save" });
     }
 
-    // 2. Transform and Sanitize
-    const transformedPackets = packetArray.map(p => {
-      // We remove the incoming 'id' so the DB can auto-increment a new one
-      // If you want to keep the incoming ID, ensure the DB column isn't a Duplicate.
-      const { id, ...rest } = p; 
+    // 2. Push to In-Memory Storage (Keeping exact original format)
+    // We add new packets to our array
+    vitalsCache.push(...packetArray);
 
-      return {
-        ...rest,
-        // Ensure spo2 is handled: "0" or 0 becomes "", otherwise keep value
-        spo2: (p.spo2 === "0" || p.spo2 === 0) ? "" : String(p.spo2),
-        // Ensure timestamp is stored correctly (Database usually expects BigInt or String)
-        timestamp: String(p.timestamp) 
-      };
-    });
+    // Optional: Limit cache size so it doesn't grow infinitely
+    if (vitalsCache.length > 100) {
+      vitalsCache = vitalsCache.slice(-100); // Keep only the last 100 readings
+    }
 
-    // 3. PUSH to database (Insert all packets in the array)
-    await db.insert(vital_data_from_wristband).values(transformedPackets);
+    // 3. Push to Neon Database for permanent storage
+    // We strip 'id' here because the DB usually auto-generates it
+    const dbPackets = packetArray.map(({ id, ...rest }) => ({
+      ...rest,
+      spo2: (rest.spo2 === "0" || rest.spo2 === 0) ? "" : String(rest.spo2),
+    }));
+    
+    await db.insert(vital_data_from_wristband).values(dbPackets);
 
     res.status(200).json({
-      message: "Data pushed successfully",
-      count: transformedPackets.length
+      message: "Data pushed to memory and DB",
+      currentCacheSize: vitalsCache.length
     });
 
   } catch (err) {
     console.error("Error saving vitals:", err);
-    // If you get a 'Unique Constraint' error, it means the ID already exists
     res.status(500).json({ error: err.message });
   }
 });
 
-
-
-
 // GET /api/vitals
-app.get("/api/vitals", async (req, res) => {
-  try {
-    const data = await db.select().from(vital_data_from_wristband);
-    res.status(200).json(data);
-  } catch (err) {
-    console.error("Error fetching vitals:", err);
-    res.status(500).json({ error: err.message });
-  }
+app.get("/api/vitals", (req, res) => {
+  // Returns the exact format from memory instantly
+  res.status(200).json(vitalsCache);
 });
 
 // Default route
