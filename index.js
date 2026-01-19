@@ -63,24 +63,32 @@ app.post("/api/vitals", async (req, res) => {
       return res.status(200).json({ message: "No data to save" });
     }
 
-    // 2. Transform data (handling the spo2 "0" logic)
-    // Note: Ensure your DB schema allows empty strings or nulls for spo2
-    const transformedPackets = packetArray.map(p => ({
-      ...p,
-      spo2: (p.spo2 === "0" || p.spo2 === 0) ? "" : String(p.spo2),
-    }));
+    // 2. Transform and Sanitize
+    const transformedPackets = packetArray.map(p => {
+      // We remove the incoming 'id' so the DB can auto-increment a new one
+      // If you want to keep the incoming ID, ensure the DB column isn't a Duplicate.
+      const { id, ...rest } = p; 
 
-    // 3. PUSH (Insert) all packets into the database
-    // We removed the db.delete() line so data accumulates
+      return {
+        ...rest,
+        // Ensure spo2 is handled: "0" or 0 becomes "", otherwise keep value
+        spo2: (p.spo2 === "0" || p.spo2 === 0) ? "" : String(p.spo2),
+        // Ensure timestamp is stored correctly (Database usually expects BigInt or String)
+        timestamp: String(p.timestamp) 
+      };
+    });
+
+    // 3. PUSH to database (Insert all packets in the array)
     await db.insert(vital_data_from_wristband).values(transformedPackets);
 
     res.status(200).json({
-      message: `Successfully pushed ${transformedPackets.length} record(s) to DB`,
-      insertedData: transformedPackets,
+      message: "Data pushed successfully",
+      count: transformedPackets.length
     });
 
   } catch (err) {
     console.error("Error saving vitals:", err);
+    // If you get a 'Unique Constraint' error, it means the ID already exists
     res.status(500).json({ error: err.message });
   }
 });
