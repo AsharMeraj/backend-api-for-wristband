@@ -52,43 +52,24 @@ const db = drizzle(sql);
 //   }
 // });
 
-// ... existing imports ...
-
-// 1. Initialize In-Memory Storage
-// This will hold the data while the server is running
-let vitalsCache = []; 
-
-// POST /api/vitals
 app.post("/api/vitals", async (req, res) => {
   try {
     const packets = req.body;
-    const packetArray = Array.isArray(packets) ? packets : [packets];
 
-    if (packetArray.length === 0) {
-      return res.status(200).json({ message: "No data to save" });
-    }
+    console.log(packets)
 
-    // 2. Push to In-Memory Storage (Keeping exact original format)
-    // We add new packets to our array
-    vitalsCache.push(...packetArray);
+    // Accept both single object and array of packets
+  
 
-    // Optional: Limit cache size so it doesn't grow infinitely
-    if (vitalsCache.length > 100) {
-      vitalsCache = vitalsCache.slice(-100); // Keep only the last 100 readings
-    }
+    // Delete previous row(s) in the table
+    await db.delete(vital_data_from_wristband);
 
-    // 3. Push to Neon Database for permanent storage
-    // We strip 'id' here because the DB usually auto-generates it
-    const dbPackets = packetArray.map(({ id, ...rest }) => ({
-      ...rest,
-      spo2: (rest.spo2 === "0" || rest.spo2 === 0) ? "" : String(rest.spo2),
-    }));
-    
-    await db.insert(vital_data_from_wristband).values(dbPackets);
+    // Insert the latest packet
+    await db.insert(vital_data_from_wristband).values(packets);
 
     res.status(200).json({
-      message: "Data pushed to memory and DB",
-      currentCacheSize: vitalsCache.length
+      message: "Saved latest packet",
+      savedData: latestPacket,
     });
 
   } catch (err) {
@@ -97,10 +78,18 @@ app.post("/api/vitals", async (req, res) => {
   }
 });
 
+
+
+
 // GET /api/vitals
-app.get("/api/vitals", (req, res) => {
-  // Returns the exact format from memory instantly
-  res.status(200).json(vitalsCache);
+app.get("/api/vitals", async (req, res) => {
+  try {
+    const data = await db.select().from(vital_data_from_wristband);
+    res.status(200).json(data);
+  } catch (err) {
+    console.error("Error fetching vitals:", err);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Default route
