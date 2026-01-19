@@ -56,31 +56,27 @@ app.post("/api/vitals", async (req, res) => {
   try {
     const packets = req.body;
 
-    // Accept both single object and array of packets
+    // 1. Accept both single object and array of packets
     const packetArray = Array.isArray(packets) ? packets : [packets];
 
     if (packetArray.length === 0) {
       return res.status(200).json({ message: "No data to save" });
     }
 
-    // Transform packets: convert spo2 = 0 to empty string
+    // 2. Transform data (handling the spo2 "0" logic)
+    // Note: Ensure your DB schema allows empty strings or nulls for spo2
     const transformedPackets = packetArray.map(p => ({
       ...p,
-      spo2: p.spo2 === "0" || p.spo2 === 0 ? "" : p.spo2,
+      spo2: (p.spo2 === "0" || p.spo2 === 0) ? "" : String(p.spo2),
     }));
 
-    // Use only the latest packet
-    const latestPacket = transformedPackets[transformedPackets.length - 1];
-
-    // Delete previous row(s) in the table
-    await db.delete(vital_data_from_wristband);
-
-    // Insert the latest packet
-    await db.insert(vital_data_from_wristband).values(latestPacket);
+    // 3. PUSH (Insert) all packets into the database
+    // We removed the db.delete() line so data accumulates
+    await db.insert(vital_data_from_wristband).values(transformedPackets);
 
     res.status(200).json({
-      message: "Saved latest packet",
-      savedData: latestPacket,
+      message: `Successfully pushed ${transformedPackets.length} record(s) to DB`,
+      insertedData: transformedPackets,
     });
 
   } catch (err) {
